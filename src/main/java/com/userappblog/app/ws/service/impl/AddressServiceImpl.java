@@ -16,10 +16,10 @@ import com.userappblog.app.ws.shared.dto.AddressDTO;
 
 @Service
 public class AddressServiceImpl implements AddressService {
-	
+
 	@Autowired
 	UserRepository userRepository;
-	
+
 	@Autowired
 	AddressRepository addressRepository;
 
@@ -28,11 +28,24 @@ public class AddressServiceImpl implements AddressService {
 		List<AddressDTO> returnValue = new ArrayList<>();
 		ModelMapper modelMapper = new ModelMapper();
 		UserEntity userEntity = userRepository.findByUserId(userId);
-		if(userEntity == null) return returnValue;
+		if (userEntity == null)
+			return returnValue;
 		Iterable<AddressEntity> addresses = addressRepository.findAllByUserDetails(userEntity);
-		for(AddressEntity addressEntity : addresses) {
+		for (AddressEntity addressEntity : addresses) {
 			returnValue.add(modelMapper.map(addressEntity, AddressDTO.class));
 		}
+		return returnValue;
+	}
+
+	@Override
+	public AddressDTO getAddress(String addressId) {
+		AddressDTO returnValue = null;
+		ModelMapper modelMapper = new ModelMapper();
+		AddressEntity addressEntity = addressRepository.findByAddressId(addressId);
+		if (addressEntity != null) {
+			returnValue = modelMapper.map(addressEntity, AddressDTO.class);
+		}
+
 		return returnValue;
 	}
 

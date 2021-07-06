@@ -1,7 +1,6 @@
 package com.userappblog.app.ws.security;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -23,7 +22,6 @@ import com.userappblog.app.ws.service.UserService;
 import com.userappblog.app.ws.shared.dto.UserDTO;
 import com.userappblog.app.ws.ui.model.request.UserLoginRequestModel;
 
-import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
