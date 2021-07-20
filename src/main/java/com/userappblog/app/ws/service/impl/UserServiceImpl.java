@@ -19,6 +19,7 @@ import com.userappblog.app.ws.exceptions.UserServiceException;
 import com.userappblog.app.ws.io.entity.UserEntity;
 import com.userappblog.app.ws.io.repositories.UserRepository;
 import com.userappblog.app.ws.service.UserService;
+import com.userappblog.app.ws.shared.AmazonSES;
 import com.userappblog.app.ws.shared.Utils;
 import com.userappblog.app.ws.shared.dto.AddressDTO;
 import com.userappblog.app.ws.shared.dto.UserDTO;
@@ -53,13 +54,15 @@ public class UserServiceImpl implements UserService {
 		//BeanUtils.copyProperties(user, userEntity);
 		ModelMapper modelMapper = new ModelMapper();
 		UserEntity userEntity = modelMapper.map(user, UserEntity.class);
-		userEntity.setEncryptedPassword(bCryptPasswordEncoder.encode(user.getPassword()));
-
 		String publicUserId = utils.generateUserId(30);
 		userEntity.setUserId(publicUserId);
+		userEntity.setEncryptedPassword(bCryptPasswordEncoder.encode(user.getPassword()));
+		userEntity.setEmailVerificationToken(utils.generateEmailVerificationToken(publicUserId));
+		userEntity.setEmailVerificationStatus(false);
 		UserEntity storedUserDetails = userRepository.save(userEntity);
 		//BeanUtils.copyProperties(storedUserDetails, returnValue);
 		UserDTO returnValue  = modelMapper.map(storedUserDetails, UserDTO.class);
+		new AmazonSES().verifyEmail(returnValue);
 		return returnValue;
 	}
 
@@ -71,7 +74,8 @@ public class UserServiceImpl implements UserService {
 														// frame work along with user details core package where we have
 														// UserDeatilsService Interface
 
-		return new User(userEntity.getEmail(), userEntity.getEncryptedPassword(), new ArrayList<>());
+		//return new User(userEntity.getEmail(), userEntity.getEncryptedPassword(), new ArrayList<>()); -- added email verification status in the login check inorder the email
+		return new User(userEntity.getEmail(), userEntity.getEncryptedPassword(), userEntity.getEmailVerificationStatus(), true, true, true, new ArrayList<>());
 	}
 
 	@Override
@@ -134,6 +138,23 @@ public class UserServiceImpl implements UserService {
 			returnValue.add(userDto);
 		}
 
+		return returnValue;
+	}
+
+	@Override
+	public boolean verifyEmailToken(String token) {
+		boolean returnValue = false;
+		
+		UserEntity userEntity = userRepository.findUserByEmailVerificationToken(token);
+		if(userEntity != null) {
+			boolean hasTokenExpired = Utils.hasTokenExpired(token);
+			if(!hasTokenExpired) {
+				userEntity.setEmailVerificationToken(null);
+				userEntity.setEmailVerificationStatus(Boolean.TRUE);
+				userRepository.save(userEntity);
+				returnValue = true;
+			}
+		}
 		return returnValue;
 	}
 
