@@ -9,8 +9,6 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
-import com.userappblog.app.ws.shared.dto.UserDTO;
-
 @Entity(name = "addresses")
 public class AddressEntity implements Serializable {
 

@@ -53,10 +53,11 @@ public class UserServiceImpl implements UserService {
 		//BeanUtils.copyProperties(user, userEntity);
 		ModelMapper modelMapper = new ModelMapper();
 		UserEntity userEntity = modelMapper.map(user, UserEntity.class);
-		userEntity.setEncryptedPassword(bCryptPasswordEncoder.encode(user.getPassword()));
-
 		String publicUserId = utils.generateUserId(30);
 		userEntity.setUserId(publicUserId);
+		userEntity.setEncryptedPassword(bCryptPasswordEncoder.encode(user.getPassword()));
+		userEntity.setEmailVerificationToken(utils.generateEmailVerificationToken(publicUserId));
+		userEntity.setEmailVerificationStatus(false);
 		UserEntity storedUserDetails = userRepository.save(userEntity);
 		//BeanUtils.copyProperties(storedUserDetails, returnValue);
 		UserDTO returnValue  = modelMapper.map(storedUserDetails, UserDTO.class);
@@ -71,7 +72,8 @@ public class UserServiceImpl implements UserService {
 														// frame work along with user details core package where we have
 														// UserDeatilsService Interface
 
-		return new User(userEntity.getEmail(), userEntity.getEncryptedPassword(), new ArrayList<>());
+		//return new User(userEntity.getEmail(), userEntity.getEncryptedPassword(), new ArrayList<>()); -- added email verification status in the login check inorder the email
+		return new User(userEntity.getEmail(), userEntity.getEncryptedPassword(), userEntity.getEmailVerificationStatus(), true, true, true, new ArrayList<>());
 	}
 
 	@Override
@@ -134,6 +136,23 @@ public class UserServiceImpl implements UserService {
 			returnValue.add(userDto);
 		}
 
+		return returnValue;
+	}
+
+	@Override
+	public boolean verifyEmailToken(String token) {
+		boolean returnValue = false;
+		
+		UserEntity userEntity = userRepository.findUserByEmailVerificationToken(token);
+		if(userEntity != null) {
+			boolean hasTokenExpired = Utils.hasTokenExpired(token);
+			if(!hasTokenExpired) {
+				userEntity.setEmailVerificationToken(null);
+				userEntity.setEmailVerificationStatus(Boolean.TRUE);
+				userRepository.save(userEntity);
+				returnValue = true;
+			}
+		}
 		return returnValue;
 	}
 
